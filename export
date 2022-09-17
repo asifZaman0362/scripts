@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# make directory for backup
+cd ~
+if [ ! -d "backup" ]; then
+    mkdir backup
+fi
+
+# copy neovim config
+if [ -f ".nvimrc" ]; then
+    cp .nvimrc backup/.nvimrc
+fi
+if [ -d ".config/nvim" ]; then
+    mkdir -p backup/.config/nvim
+    cp .config/nvim/init.vim backup/.config/nvim/init.vim
+fi
+if [ -d ".local/share/nvim" ]; then
+    mkdir -p backup/.local/share/nvim
+    cp .local/share/nvim/init.vim backup/.local/share/nvim/init.vim
+fi
+
+# copy kitty settings
+if [ -d ".config/kitty" ]; then
+    mkdir -p backup/.config/kitty
+    cp -r .config/kitty/* backup/.config/kitty/
+fi
+
+# copy gnome-terminal settings
+dconf dump /org/gnome/terminal/ > backup/gnome_terminal_settings.txt
+
+# copy fish settings
+if [ -d ".config/fish" ]; then
+    mkdir backup/.config/fish
+    cp -r .config/fish/* backup/.config/fish
+fi
+
+# copy scripts
+if [ -d "scripts" ]; then
+    mkdir backup/scripts
+    cp -r scripts/* backup/scripts/
+fi
+
+if [ -f ".config/picom.conf" ]; then
+    cp .config/picom.conf backup/.config/picom.conf
+fi
+
+if [ -d "sources/dwm" ]; then
+    mkdir backup/dwm
+    cp sources/dwm/config.h backup/dwm/
+fi
+
+if [ -d "sources/st" ]; then
+    mkdir backup/st
+    cp sources/st/config.h backup/st/
+fi
+
+cd backup
+pwd
+git add -A
+git commit -m "Updated files"
+git push -u origin main

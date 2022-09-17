@@ -1,0 +1,142 @@
+#!/bin/python
+import sys
+
+def is_operator(c: chr) -> bool:
+    return c in '+-*/%!^'
+
+def math(arg1: float, arg2: float, op: chr) -> float:
+    match op:
+        case '+':
+            return arg1 + arg2
+        case '*':
+            return arg1 * arg2
+        case '-':
+            return arg1 - arg2
+        case '/':
+            return arg1 / arg2
+        case '^':
+            return arg1 ** arg2
+    print('Invalid operator!')
+    exit(-1)
+
+def factorial(n: float) -> float:
+    if n == 0: return 1
+    else: return n * factorial(n - 1)
+
+def parse_expression(expr: str):
+    # step 0: cleanup
+    clean_expr = ''
+    for c in expr:
+        if c in ' \t\r\n':
+            continue
+        else:
+            clean_expr += c
+    expr = clean_expr
+    # step 1: scanning
+    tokens = []
+    token = ''
+    for c in expr:
+        if is_operator(c) or c in '()':
+            if token:
+                number = float(token)
+                tokens.append(number)
+                tokens.append(c)
+                token = ''
+            else:
+                tokens.append(c)
+        else:
+            token += c
+    if token:
+        tokens.append(float(token))
+        token = ''
+    #step 2: convert to postfix
+    precedence = {
+        '(': -1,
+        '+': 0,
+        '-': 0,
+        '*': 1,
+        '/': 1,
+        '^': 2,
+        '!': 3,
+    }
+    stack = []
+    temp = []
+    for token in tokens:
+        flag = False
+        if token == '(':
+            temp.append(token)
+        elif token == ')':
+            while len(temp) and temp[-1] != '(':
+                stack.append(temp[-1])
+                temp.pop()
+            if len(temp) and temp[-1] == '(':
+                temp.pop()
+            else:
+                print('Bad expression! No opening parenthesis to close')
+                exit(-1)
+        else:
+            try:
+                is_operator(token)
+                while len(temp):
+                    if precedence[token] > precedence[temp[-1]]:
+                        flag = True
+                        temp.append(token)
+                        break
+                    else:
+                        stack.append(temp[-1])
+                        temp.pop()
+                if not flag: temp.append(token)
+            except Exception:
+                stack.append(token)
+    while len(temp):
+        top = temp[-1]
+        stack.append(top)
+        temp.pop()
+    #step 3: evaluation
+    nstack = []
+    for token in stack:
+        try:
+            is_operator(token)
+            op = token
+            arg1 = nstack[-1]
+            nstack.pop()
+            if op == '!':
+                result = factorial(arg1)
+                nstack.append(result)
+            else:
+                try:
+                    arg2 = nstack[-1]
+                    nstack.pop()
+                    result = math(arg1, arg2, op)
+                    nstack.append(result)
+                except Exception:
+                    if op == '-':
+                        nstack.append(0 - arg1)
+                    else:
+                        print(f"{op} requires two operands!")
+                        exit(-1)
+        except Exception:
+            nstack.append(token)
+        except Exception:
+            continue
+    if len(nstack) > 1:
+        print('Malformed expression!')
+        exit(-1)
+    return nstack[-1]
+
+def repl():
+    while True:
+        try:
+            expression = input('>>')
+            if expression == 'exit' or expression == 'q':
+                exit(0)
+            else:
+                print(parse_expression(expression))
+        except KeyboardInterrupt:
+            return 0
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        for arg in sys.argv[1:]:
+            print(parse_expression(arg))
+    else: repl()
